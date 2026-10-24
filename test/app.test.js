@@ -41,6 +41,14 @@ async function pasDeDebordement(nom) {
   assert.ok(l <= 360, `${nom} deborde horizontalement (${l}px)`);
 }
 
+// L'ecran est redessine APRES l'enregistrement : saisir avant le message
+// de confirmation, c'est ecrire dans un champ qui va disparaitre.
+async function enregistrerGrille() {
+  await page.evaluate(() => { document.querySelector("#toast").textContent = ""; });
+  await page.click("#enrGrille");
+  await page.waitForFunction(() => document.querySelector("#toast").textContent === "Grille enregistrée");
+}
+
 async function nouvelleTx({ bouton, op, type, montant, bonusManuel }) {
   await page.click(`[data-nouveau="${bouton}"]`);
   await page.waitForSelector("#feuille[open]");
@@ -68,8 +76,7 @@ test("grille MVola depot : deux tranches, verification d'un montant", async () =
   assert.equal(await page.inputValue('input[data-g="1"][data-champ="min"]'), "10001");
   await page.selectOption('select[data-g="1"]', "pourcent");
   await page.fill('input[data-g="1"][data-champ="valeur"]', "1");
-  await page.click("#enrGrille");
-  await page.waitForSelector('input[data-g="1"]');
+  await enregistrerGrille();
   await page.fill("#testMontant", "50000");
   assert.equal(await page.textContent("#testResultat"), "50 000 Ar → bonus 500 Ar");
   await page.fill("#testMontant", "8000");
@@ -85,7 +92,7 @@ test("une grille qui se chevauche est refusee", async () => {
   await page.click("#enrGrille");
   assert.match(await page.textContent("#grilleErreur"), /chevauchent/);
   await page.click('[data-suppr="2"]');
-  await page.click("#enrGrille");
+  await enregistrerGrille();
   assert.equal(await page.textContent("#grilleErreur"), "");
 });
 

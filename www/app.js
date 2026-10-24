@@ -162,7 +162,13 @@
     return true;
   }
 
+  // Chaque ecran lit la base avant de s'afficher. Si l'on change d'onglet
+  // pendant cette lecture, l'ancien ecran ne doit pas s'afficher par-dessus
+  // le nouveau : seul le dernier rendu demande a le droit d'ecrire.
+  let dernierRendu = 0;
+
   async function rendre() {
+    const jeton = ++dernierRendu;
     $$(".onglets button").forEach((b) => {
       if (b.dataset.vue === etat.vue) b.setAttribute("aria-current", "page");
       else b.removeAttribute("aria-current");
@@ -170,10 +176,10 @@
     $("#nomBoutique").textContent = etat.reglages.nomBoutique;
     $("#dateDuJour").textContent = jourLisible(aujourdhui(), true);
     try {
-      if (etat.vue === "caisse") await vueCaisse();
-      else if (etat.vue === "rapports") await vueRapports();
-      else if (etat.vue === "reglages") await vueReglages();
-      else await vueAccueil();
+      if (etat.vue === "caisse") await vueCaisse(jeton);
+      else if (etat.vue === "rapports") await vueRapports(jeton);
+      else if (etat.vue === "reglages") await vueReglages(jeton);
+      else await vueAccueil(jeton);
     } catch (e) {
       vue.innerHTML = `<div class="carte"><p class="erreur">Erreur : ${esc(e && e.message)}</p></div>`;
     }
@@ -192,9 +198,10 @@
     </button></li>`;
   }
 
-  async function vueAccueil() {
+  async function vueAccueil(jeton) {
     const jour = aujourdhui();
     const [txs, total] = await Promise.all([S.txEntre(jour, jour), S.compterTx()]);
+    if (jeton !== dernierRendu) return;
     const r = C.resume(txs);
     const sansGrille = opsActifs().filter((o) => grilleVide(o.id));
     const derniere = etat.reglages.derniereSauvegarde ? new Date(etat.reglages.derniereSauvegarde) : null;
@@ -406,9 +413,10 @@
     return `<span class="ecart-plus">Surplus <span class="nw">${ar(d)}</span></span>`;
   }
 
-  async function vueCaisse() {
+  async function vueCaisse(jeton) {
     const jour = etat.jourCaisse || aujourdhui();
     const [j, txs, prec] = await Promise.all([S.lireJour(jour), S.txEntre(jour, jour), S.derniereCloture(jour)]);
+    if (jeton !== dernierRendu) return;
     const comptes = comptesCaisse();
     const ouv = j.ouverture || {};
     const theo = C.soldes(ouv, txs);
@@ -536,9 +544,10 @@
     }
   }
 
-  async function vueRapports() {
+  async function vueRapports(jeton) {
     const [du, au] = bornes();
     const txs = await S.txEntre(du, au);
+    if (jeton !== dernierRendu) return;
     const r = C.resume(txs);
     const ops = C.OPERATEURS.filter((o) => etat.reglages.operateurs[o.id] || r.parOperateur[o.id].nombre);
     const jours = Object.keys(r.parJour).sort().reverse();
