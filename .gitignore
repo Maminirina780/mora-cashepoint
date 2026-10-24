@@ -1,0 +1,14 @@
+node_modules/
+desktop/node_modules/
+desktop/www/
+desktop/release/
+test-results/
+*.log
+.DS_Store
+# Android : fichiers de build et cles locales
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+*.keystore
+*.jks

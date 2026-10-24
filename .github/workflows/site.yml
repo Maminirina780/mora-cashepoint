@@ -1,0 +1,46 @@
+# Publie le dossier www/ sur Cloudflare Pages (cashpoint-mora.pages.dev).
+#
+# Il faut les secrets CLOUDFLARE_API_TOKEN et CLOUDFLARE_ACCOUNT_ID dans CE
+# depot (Settings > Secrets and variables > Actions) : les secrets d'un
+# autre depot ne sont pas partages. Sans eux, la publication est sautee
+# avec un avertissement, sans faire echouer les autres verifications.
+name: Publier le site
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "www/**"
+      - ".github/workflows/site.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: pages-cashpoint
+  cancel-in-progress: true
+
+jobs:
+  publier:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verifier le jeton
+        id: jeton
+        run: |
+          if [ -n "${{ secrets.CLOUDFLARE_API_TOKEN }}" ] && [ -n "${{ secrets.CLOUDFLARE_ACCOUNT_ID }}" ]; then
+            echo "present=oui" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::CLOUDFLARE_API_TOKEN ou CLOUDFLARE_ACCOUNT_ID absent de ce depot : site non publie."
+            echo "present=non" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Publier
+        if: steps.jeton.outputs.present == 'oui'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          # Le projet est cree au premier passage ; ensuite la commande
+          # repond qu'il existe deja, ce qui n'est pas une erreur.
+          npx --yes wrangler@4.135.0 pages project create cashpoint-mora --production-branch=main || true
+          npx --yes wrangler@4.135.0 pages deploy www --project-name=cashpoint-mora --branch=main

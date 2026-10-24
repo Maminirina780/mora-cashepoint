@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0f2a4a">
+  <meta name="description" content="Cash Point Mora : enregistrez chaque dépôt et retrait Mobile Money et suivez votre bonus du jour.">
+  <title>Cash Point Mora</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="barre">
+    <div>
+      <div class="boutique" id="nomBoutique">Cash Point</div>
+      <div class="date" id="dateDuJour"></div>
+    </div>
+    <img src="icon.svg" alt="" class="logo" width="36" height="36">
+  </header>
+
+  <main id="vue" tabindex="-1"></main>
+
+  <nav class="onglets" aria-label="Navigation">
+    <button type="button" data-vue="accueil" aria-current="page"><span class="ic" aria-hidden="true">⌂</span>Accueil</button>
+    <button type="button" data-vue="caisse"><span class="ic" aria-hidden="true">◫</span>Caisse</button>
+    <button type="button" data-vue="rapports"><span class="ic" aria-hidden="true">▤</span>Rapports</button>
+    <button type="button" data-vue="reglages"><span class="ic" aria-hidden="true">⚙</span>Réglages</button>
+  </nav>
+
+  <dialog id="feuille" aria-labelledby="feuilleTitre">
+    <form id="formTx" method="dialog" novalidate>
+      <h2 id="feuilleTitre">Nouvelle transaction</h2>
+
+      <fieldset>
+        <legend>Opérateur</legend>
+        <div class="puces" id="choixOp"></div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Type</legend>
+        <div class="puces" id="choixType"></div>
+      </fieldset>
+
+      <label class="champ">
+        <span>Montant (Ar)</span>
+        <input id="txMontant" name="montant" inputmode="numeric" autocomplete="off" placeholder="0" required>
+      </label>
+
+      <div class="bonus-ligne" id="bonusLigne" aria-live="polite"></div>
+      <label class="case">
+        <input type="checkbox" id="bonusManuel"> Saisir le bonus à la main
+      </label>
+      <label class="champ" id="champBonus" hidden>
+        <span>Bonus (Ar)</span>
+        <input id="txBonus" inputmode="numeric" autocomplete="off" placeholder="0">
+      </label>
+
+      <details id="plusDetails">
+        <summary>Plus de détails (numéro, référence, heure)</summary>
+        <label class="champ">
+          <span>Numéro du client</span>
+          <input id="txNumero" type="tel" autocomplete="off" placeholder="034 00 000 00">
+        </label>
+        <label class="champ">
+          <span>Référence de la transaction</span>
+          <input id="txReference" autocomplete="off">
+        </label>
+        <label class="champ">
+          <span>Note</span>
+          <input id="txNote" autocomplete="off" maxlength="200">
+        </label>
+        <label class="champ">
+          <span>Date et heure</span>
+          <input id="txDate" type="datetime-local">
+        </label>
+      </details>
+
+      <p class="erreur" id="txErreur" role="alert"></p>
+
+      <div class="actions">
+        <button type="button" class="btn secondaire" id="txAnnuler">Annuler</button>
+        <button type="submit" class="btn primaire" id="txEnregistrer">Enregistrer</button>
+      </div>
+      <button type="button" class="btn danger plein" id="txSupprimer" hidden>Supprimer cette transaction</button>
+    </form>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="vendor/capacitor.js"></script>
+  <script src="vendor/filesystem.js"></script>
+  <script src="vendor/share.js"></script>
+  <script src="calc.js"></script>
+  <script src="store.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

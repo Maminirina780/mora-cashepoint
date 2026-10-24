@@ -1,0 +1,29 @@
+# Les calculs d'argent et le parcours complet dans un vrai navigateur, a
+# chaque modification. Un bonus mal calcule coute au client sans que rien
+# ne le signale : c'est ici qu'on le voit.
+name: Tests
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Installer les dependances
+        run: npm ci
+
+      - name: Installer le navigateur de test
+        run: npx playwright install --with-deps chromium
+
+      - name: Lancer les tests
+        run: npm test

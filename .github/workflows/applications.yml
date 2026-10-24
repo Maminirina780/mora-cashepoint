@@ -1,0 +1,124 @@
+# Fabrique l'APK Android et l'installateur Windows a partir du meme code
+# (dossier www/). Les fichiers sont telechargeables depuis l'execution
+# (onglet Actions > l'execution > Artifacts). Sur un tag « v* », ils sont
+# aussi publies dans une Release GitHub.
+#
+# APK : sans cle de signature dans les secrets, une APK « debug » est
+# produite. Elle s'installe, mais chaque nouvelle APK debug est signee par
+# une cle differente : Android refuse alors la mise a jour et il faut
+# desinstaller, ce qui EFFACE les transactions. Avant de livrer au client,
+# ajoutez les secrets ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD,
+# ANDROID_KEY_ALIAS et ANDROID_KEY_PASSWORD (voir README).
+name: Construire les applications
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+    paths:
+      - "www/**"
+      - "android/**"
+      - "desktop/**"
+      - "package.json"
+      - "package-lock.json"
+      - "capacitor.config.json"
+      - ".github/workflows/applications.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Installer les dependances
+        run: npm ci
+
+      - name: Copier le site dans le projet Android
+        run: npm run android:sync
+
+      - name: Construire l'APK
+        env:
+          VERSION_CODE: ${{ github.run_number }}
+          CLE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          version=$(node -p "require('./package.json').version")
+          mkdir -p sortie
+          cd android
+          if [ -n "$CLE_BASE64" ]; then
+            echo "$CLE_BASE64" | base64 -d > "$RUNNER_TEMP/cle.jks"
+            export ANDROID_KEYSTORE_FILE="$RUNNER_TEMP/cle.jks"
+            ./gradlew --no-daemon assembleRelease
+            cp app/build/outputs/apk/release/app-release.apk "../sortie/CashPointMora-$version.apk"
+          else
+            echo "::warning::Aucune cle de signature dans les secrets : APK debug (pour essai seulement, voir README)."
+            ./gradlew --no-daemon assembleDebug
+            cp app/build/outputs/apk/debug/app-debug.apk "../sortie/CashPointMora-$version-essai.apk"
+          fi
+          ls -la ../sortie
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: CashPointMora-Android
+          path: sortie/*.apk
+          if-no-files-found: error
+
+  windows:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: desktop
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: desktop/package-lock.json
+
+      - name: Installer les dependances
+        run: npm ci
+
+      - name: Construire l'installateur
+        run: npm run dist
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: CashPointMora-Windows
+          path: desktop/release/*.exe
+          if-no-files-found: error
+
+  publier:
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: [android, windows]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: fichiers
+          merge-multiple: true
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: fichiers/*
+          fail_on_unmatched_files: true
+          generate_release_notes: true

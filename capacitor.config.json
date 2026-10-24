@@ -1,0 +1,8 @@
+{
+  "appId": "mg.mora.cashpoint",
+  "appName": "Cash Point Mora",
+  "webDir": "www",
+  "android": {
+    "allowMixedContent": false
+  }
+}

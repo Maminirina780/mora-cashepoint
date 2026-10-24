@@ -1,0 +1,37 @@
+{
+  "name": "cashpoint-mora-desktop",
+  "productName": "Cash Point Mora",
+  "version": "1.0.0",
+  "description": "Cash Point Mora pour Windows : transactions Mobile Money et bonus du jour.",
+  "author": "Mora Abonner",
+  "license": "UNLICENSED",
+  "private": true,
+  "main": "main.js",
+  "scripts": {
+    "copier-www": "node -e \"const fs=require('fs');fs.rmSync('www',{recursive:true,force:true});fs.cpSync('../www','www',{recursive:true})\"",
+    "start": "npm run copier-www && electron .",
+    "dist": "npm run copier-www && electron-builder --win --x64 --publish never"
+  },
+  "build": {
+    "appId": "mg.mora.cashpoint.desktop",
+    "productName": "Cash Point Mora",
+    "files": ["main.js", "www/**/*"],
+    "directories": { "output": "release", "buildResources": "build" },
+    "win": {
+      "target": [{ "target": "nsis", "arch": ["x64"] }],
+      "signAndEditExecutable": false,
+      "artifactName": "CashPointMora-Setup-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "perMachine": false,
+      "createDesktopShortcut": true,
+      "shortcutName": "Cash Point Mora"
+    }
+  },
+  "devDependencies": {
+    "electron": "44.5.1",
+    "electron-builder": "26.17.0"
+  }
+}

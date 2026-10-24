@@ -1,0 +1,24 @@
+{
+  "name": "cashpoint-mora",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Cash Point Mora : transactions Mobile Money et bonus du jour. Site web, APK Android (Capacitor) et logiciel Windows (Electron).",
+  "license": "UNLICENSED",
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "serve": "node scripts/serve.js",
+    "vendor": "node scripts/vendor.js",
+    "icones": "node scripts/icones.js",
+    "android:sync": "npm run vendor && cap sync android"
+  },
+  "dependencies": {
+    "@capacitor/android": "8.5.2",
+    "@capacitor/core": "8.5.2",
+    "@capacitor/filesystem": "8.1.4",
+    "@capacitor/share": "8.0.2"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "8.5.2",
+    "playwright": "1.63.0"
+  }
+}
